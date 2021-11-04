@@ -13,17 +13,48 @@
     js_set $file_path file_path;
 {{ end }}
 
+{{ define "thumbor-map" }}
+    map $http_accept $webp_prefix {
+        default   "/default";
+        "~*webp*"  "/auto_webp";
+    }
+    map $request_uri $format {
+        default "";
+        "~*format\(jpeg\)" "image/jpeg";
+        "~*format\(jpg\)" "image/jpeg";
+        "~*format\(png\)" "image/png";
+        "~*format\(gif\)" "image/gif";
+        "~*format\(webp\)" "image/webp";
+        "~*\.jpeg" "image/jpeg";
+        "~*\.jpg" "image/jpeg";
+        "~*\.png" "image/png";
+        "~*\.gif" "image/gif";
+        "~*\.webp" "image/webp";
+    }
+	map $http_accept $auto_webp_content_type {
+		default   $format;
+		"~*webp*"  "image/webp";
+	}
+{{ end }}
 
 {{ define "thumbor" }}
     {{ $proto := .Proto }}
     {{ $upstream_name := .UpstreamName }}
     {{ $allowCors := (first (groupByKeys .Containers "Env.THUMBOR_ALLOW_CORS")) }}
     {{ $corsOrigin := (first (groupByKeys .Containers "Env.CORS_ALLOW_ORIGIN")) }}
+	{{ $autoWebp := (first (groupByKeys .Containers "Env.AUTO_WEBP")) }}
     location ~* "^/(.+)?$" {
         {{ if or $allowCors $corsOrigin }}
             {{ template "cors" (dict "CorsOrigin" $corsOrigin) }}
         {{ end }}
-
+        {{ if $autoWebp }}
+            try_files $webp_prefix/$file_path =404;
+            add_header Vary Accept;
+            #if auto webp is on then content-type is based on accept header
+            set $format $auto_webp_content_type;
+        {{ else }}
+            try_files /default/$file_path =404;
+        {{ end }}
         proxy_cache thumbor;
         proxy_buffering on;
         proxy_pass {{ trim $proto }}://{{ trim $upstream_name }};
