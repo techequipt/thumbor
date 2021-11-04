@@ -111,6 +111,8 @@ access_log off;
 resolver {{ $.Env.RESOLVERS }};
 {{ end }}
 
+{{ template "thumbor-include" }}
+
 {{ if (exists "/etc/nginx/proxy.conf") }}
 include /etc/nginx/proxy.conf;
 {{ else }}
