@@ -143,6 +143,7 @@ resolver {{ $.Env.RESOLVERS }};
 {{ end }}
 
 {{ template "thumbor-include" }}
+{{ template "thumbor-map" }}
 
 {{ if (exists "/etc/nginx/proxy.conf") }}
 include /etc/nginx/proxy.conf;
