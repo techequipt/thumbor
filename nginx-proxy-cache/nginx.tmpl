@@ -7,13 +7,18 @@
     add_header 'Access-Control-Allow-Headers' 'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Mx-ReqToken,X-Requested-With';
 {{ end }}
 
+{{ define "thumbor-include" }}
+    merge_slashes off;
+    js_include imgpath.js;
+    js_set $file_path file_path;
+{{ end }}
+
+
 {{ define "thumbor" }}
     {{ $proto := .Proto }}
     {{ $upstream_name := .UpstreamName }}
     {{ $allowCors := (first (groupByKeys .Containers "Env.THUMBOR_ALLOW_CORS")) }}
     {{ $corsOrigin := (first (groupByKeys .Containers "Env.CORS_ALLOW_ORIGIN")) }}
-    merge_slashes off;
-    js_include imgpath.js;
     location ~* "^/(.+)?$" {
         {{ if or $allowCors $corsOrigin }}
             {{ template "cors" (dict "CorsOrigin" $corsOrigin) }}
