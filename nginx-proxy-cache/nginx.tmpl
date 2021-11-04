@@ -55,15 +55,22 @@
         {{ else }}
             try_files /default/$file_path =404;
         {{ end }}
-        proxy_cache thumbor;
-        proxy_buffering on;
-        proxy_pass {{ trim $proto }}://{{ trim $upstream_name }};
+        add_header Content-Type $format;
+        error_page  404 = @fetch;
     }
 
     location = /healthcheck {
         proxy_pass {{ trim .Proto }}://{{ trim $upstream_name }};
         access_log off;
     }
+
+	location @fetch {
+		internal;
+		{{ if or $allowCors $corsOrigin }}
+			{{ template "cors" (dict "CorsOrigin" $corsOrigin) }}
+		{{ end }}
+		proxy_pass {{ trim $proto }}://{{ trim $upstream_name }};
+	}
 {{ end }}
 
 {{ define "thumbor-caching" }}
